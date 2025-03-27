@@ -1,0 +1,25 @@
+C:\msys64\ucrt64\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2024.3.4/bin/ninja/win/x64/ninja.exe" -DCMAKE_C_COMPILER=C:/msys64/ucrt64/bin/gcc.exe -DCMAKE_CXX_COMPILER=C:/msys64/ucrt64/bin/g++.exe -G Ninja -S C:\Users\duytu\CLionProjects\SDL_TEST -B C:\Users\duytu\CLionProjects\SDL_TEST\cmake-build-debug
+-- The C compiler identification is GNU 14.2.0
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/msys64/ucrt64/bin/gcc.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/msys64/ucrt64/bin/g++.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found webp: C:/msys64/ucrt64/lib/libwebp.dll.a
+-- Found TIFF: C:/msys64/ucrt64/lib/libtiff.dll.a (found version "4.7.0")
+-- Found JPEG: C:/msys64/ucrt64/lib/libjpeg.dll.a (found version "80")
+-- Found libjxl: C:/msys64/ucrt64/lib/libjxl.dll.a
+-- Found ZLIB: C:/msys64/ucrt64/lib/libz.dll.a (found version "1.3.1")
+-- Found PNG: C:/msys64/ucrt64/lib/libpng.dll.a (found version "1.6.47")
+-- Found modplug: C:/msys64/ucrt64/lib/libmodplug.dll.a
+-- Found mpg123: C:/msys64/ucrt64/lib/libmpg123.dll.a
+-- Found OpusFile: C:/msys64/ucrt64/lib/libopusfile.dll.a
+-- Configuring done (16.1s)
+-- Generating done (0.2s)
+-- Build files have been written to: C:/Users/duytu/CLionProjects/SDL_TEST/cmake-build-debug
