@@ -4,7 +4,7 @@
 #include <cmath>
 #include <algorithm>
 #include <ctime>
-#include     <iostream>
+#include<iostream>
 using namespace std;
 
 const int SCREEN_WIDTH = 1000;
@@ -33,6 +33,10 @@ struct Enemy {
         return x == other.x && y == other.y && speed == other.speed;
     }
 };
+struct Item {
+    int x, y;
+    bool isActive = false; // Kiểm tra item có tồn tại hay không
+};
 
 vector<Enemy> enemies;
 Uint32 lastSpawnTime = 0;
@@ -51,6 +55,10 @@ struct Bullet {
 vector<Bullet> bullets;
 SDL_Window* window = nullptr;
 SDL_Renderer* renderer = nullptr;
+
+Item item;
+bool hasItem = false; // Kiểm tra player có item hay không
+Uint32 itemStartTime = 0; // Lưu thời gian player nhặt item
 
 bool init() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) return false;
@@ -82,6 +90,17 @@ void update() {
         b.x += b.dx;
         b.y += b.dy;
     }
+    if (isSpawnRoomRed && !item.isActive) {
+        int spawn_min_x = dungeons[0].x * DUNGEON_SIZE * TILE_SIZE;
+        int spawn_max_x = spawn_min_x + DUNGEON_SIZE * TILE_SIZE;
+        int spawn_min_y = dungeons[0].y * DUNGEON_SIZE * TILE_SIZE;
+        int spawn_max_y = spawn_min_y + DUNGEON_SIZE * TILE_SIZE;
+
+        item.x = spawn_min_x + rand() % (DUNGEON_SIZE * TILE_SIZE);
+        item.y = spawn_min_y + rand() % (DUNGEON_SIZE * TILE_SIZE);
+        item.isActive = true;
+    }
+
     bullets.erase(remove_if(bullets.begin(), bullets.end(), [](Bullet& b) {
         return b.x < camera_x || b.x > camera_x + SCREEN_WIDTH ||
                b.y < camera_y || b.y > camera_y + SCREEN_HEIGHT;
@@ -113,6 +132,25 @@ void update() {
         if (player_y < spawn_min_y) player_y = spawn_min_y;
         if (player_y > spawn_max_y - PLAYER_RADIUS) player_y = spawn_max_y - PLAYER_RADIUS;
     }
+    if (item.isActive) {
+        int dx = player_x - item.x;
+        int dy = player_y - item.y;
+        if (dx * dx + dy * dy <= PLAYER_RADIUS * PLAYER_RADIUS) {
+            hasItem = true;
+            itemStartTime = SDL_GetTicks();
+            item.isActive = false;
+        }
+    }
+
+    // Hết thời gian vòng đỏ thì mất hiệu ứng item
+    if (hasItem && SDL_GetTicks() - itemStartTime >= 30000) {
+        hasItem = false;
+    }
+    int currentSpeed = hasItem ? SPEED * 2 : SPEED;
+    player_x += player_dx * currentSpeed;
+    player_y += player_dy * currentSpeed;
+
+
 }
 
 void updateEnemies() {
@@ -128,6 +166,11 @@ void updateEnemies() {
             e.x += e.speed * dx / length;
             e.y += e.speed * dy / length;
         }
+        if (!hasItem && length <= PLAYER_RADIUS) {
+            isPlayerAlive = false;
+            return;
+        }
+
     }
     bullets.erase(remove_if(bullets.begin(), bullets.end(), [&](Bullet& b) {
     return any_of(enemies.begin(), enemies.end(), [&](Enemy& e) {
@@ -201,6 +244,15 @@ void render() {
         SDL_Rect rect = {b.x - camera_x, b.y - camera_y, BULLET_SIZE, BULLET_SIZE};
         SDL_RenderFillRect(renderer, &rect);
     }
+    if (item.isActive) {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+        renderCircle(item.x, item.y, PLAYER_RADIUS);
+    }
+    if (item.isActive) {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+        renderCircle(item.x, item.y, PLAYER_RADIUS);
+    }
+
     SDL_RenderPresent(renderer);
 }
 
