@@ -4,7 +4,7 @@
 #include <cmath>
 #include <algorithm>
 #include <ctime>
-#include<iostream>
+#include <iostream>
 using namespace std;
 
 const int SCREEN_WIDTH = 1000;
