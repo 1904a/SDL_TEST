@@ -4,6 +4,7 @@
 #include <cmath>
 #include <algorithm>
 #include <ctime>
+#include<iostream>
 using namespace std;
 
 const int SCREEN_WIDTH = 1000;
@@ -15,18 +16,22 @@ const int SPEED = 5;
 const int BULLET_SPEED = 10;
 const int DUNGEON_SIZE = 20;
 const int ENEMY_SPAWN_INTERVAL = 2000; // Spawn kẻ địch mỗi 2 giây
+bool isPlayerAlive = true; // Player bắt đầu còn sống
 
 struct Room {
     int x, y;
 };
     Uint32 spawnRoomChangeTime = 0; // Lưu thời điểm bắt đầu game
     bool isSpawnRoomRed = false;    // Trạng thái đổi màu
-
+    Uint32 redZoneStartTime = 0; // Lưu thời gian vòng đỏ bắt đầu
 vector<Room> dungeons = {{0, 0}, {50, 0}, {0, 50}, {50, 50}};
 
 struct Enemy {
     int x, y;
     int speed;
+    bool operator==(const Enemy& other) const {
+        return x == other.x && y == other.y && speed == other.speed;
+    }
 };
 
 vector<Enemy> enemies;
@@ -66,6 +71,8 @@ void spawnEnemy() {
 }
 
 void update() {
+    Uint32 currentTime = SDL_GetTicks();
+
     player_x += player_dx * SPEED;
     player_y += player_dy * SPEED;
     camera_x = player_x - SCREEN_WIDTH / 2;
@@ -84,7 +91,28 @@ void update() {
     if (!isSpawnRoomRed && SDL_GetTicks() - spawnRoomChangeTime >= 20000) {
         isSpawnRoomRed = true;
     }
+    if (!isSpawnRoomRed && currentTime - spawnRoomChangeTime >= 20000) {
+        isSpawnRoomRed = true;
+        redZoneStartTime = currentTime; // Lưu thời điểm vòng đỏ bắt đầu
+    }
 
+    // Nếu vòng đỏ đã tồn tại 30 giây, tắt vòng đỏ
+    if (isSpawnRoomRed && currentTime - redZoneStartTime >= 30000) {
+        isSpawnRoomRed = false;
+    }
+
+    // Nếu vòng đỏ xuất hiện, ép player vào trong phòng spawn
+    if (isSpawnRoomRed) {
+        int spawn_min_x = dungeons[0].x * DUNGEON_SIZE * TILE_SIZE;
+        int spawn_max_x = spawn_min_x + DUNGEON_SIZE * TILE_SIZE;
+        int spawn_min_y = dungeons[0].y * DUNGEON_SIZE * TILE_SIZE;
+        int spawn_max_y = spawn_min_y + DUNGEON_SIZE * TILE_SIZE;
+
+        if (player_x < spawn_min_x) player_x = spawn_min_x;
+        if (player_x > spawn_max_x - PLAYER_RADIUS) player_x = spawn_max_x - PLAYER_RADIUS;
+        if (player_y < spawn_min_y) player_y = spawn_min_y;
+        if (player_y > spawn_max_y - PLAYER_RADIUS) player_y = spawn_max_y - PLAYER_RADIUS;
+    }
 }
 
 void updateEnemies() {
@@ -92,22 +120,25 @@ void updateEnemies() {
         int dx = player_x - e.x;
         int dy = player_y - e.y;
         float length = sqrt(dx * dx + dy * dy);
+        if (length <= PLAYER_RADIUS) {
+            isPlayerAlive = false;
+            return; // Thoát ngay khi phát hiện va chạm
+        }
         if (length > 0) {
             e.x += e.speed * dx / length;
             e.y += e.speed * dy / length;
         }
     }
     bullets.erase(remove_if(bullets.begin(), bullets.end(), [&](Bullet& b) {
-        for (auto it = enemies.begin(); it != enemies.end(); ++it) {
-            int dx = b.x - it->x;
-            int dy = b.y - it->y;
-            if (dx * dx + dy * dy <= PLAYER_RADIUS * PLAYER_RADIUS) {
-                enemies.erase(it);
-                return true;
-            }
+    return any_of(enemies.begin(), enemies.end(), [&](Enemy& e) {
+        int dx = b.x - e.x, dy = b.y - e.y;
+        if (dx * dx + dy * dy <= PLAYER_RADIUS * PLAYER_RADIUS) {
+            enemies.erase(remove(enemies.begin(), enemies.end(), e), enemies.end());
+            return true;
         }
         return false;
-    }), bullets.end());
+    });
+}), bullets.end());
 }
 
 void renderGrid() {
@@ -208,6 +239,10 @@ int main(int argc, char* argv[]) {
         updateEnemies();
         render();
         SDL_Delay(16);
+        if (!isPlayerAlive) {
+            cout<<"Gane over";
+            break; // Thoát khỏi vòng lặp game khi player chết
+        }
     }
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
